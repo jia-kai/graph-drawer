@@ -1,6 +1,6 @@
 /*
  * $File: main.cpp
- * $Date: Tue Feb 01 00:08:53 2011 +0800
+ * $Date: Tue Feb 01 16:36:33 2011 +0800
  */
 
 #include "func_drawer.h"
@@ -13,13 +13,12 @@ int main(int argc, char **argv)
 	Gtk::Main kit(argc, argv);
 	Gtk::Window win;
 	win.set_title("Graph Drawer");
-	win.size_allocate(Gdk::Rectangle(0, 0, 400, 400));
+	win.set_default_size(400, 400);
 
 	Function_mandelbrot func;
 	FuncDrawer drawer(func);
 	win.add(drawer);
 	drawer.show();
-	drawer.redraw();
 
 	Gtk::Main::run(win);
 
