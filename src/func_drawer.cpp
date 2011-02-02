@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Tue Feb 01 16:45:14 2011 +0800
+ * $Date: Wed Feb 02 21:00:18 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -9,6 +9,7 @@
 #include "func_drawer.h"
 
 #include <cmath>
+#define LOCK Glib::Mutex::Lock __this_name_shoud_not_be_used_it_is_a_mutex_lock__(this->m_mutex)
 
 class FillImageProgressReporter : public Function::FillImageProgressReporter
 {
@@ -19,7 +20,8 @@ class FillImageProgressReporter : public Function::FillImageProgressReporter
 
 FuncDrawer::FuncDrawer(const Function &func) :
 	m_func(func), m_prev_domain(func.get_initial_domain()),
-	m_prev_width(-1), m_prev_height(-1)
+	m_prev_width(-1), m_prev_height(-1),
+	m_p_render_thread(NULL)
 {
 }
 
@@ -27,12 +29,23 @@ FuncDrawer::~FuncDrawer()
 {
 }
 
-void FuncDrawer::gen_pixbuf(const Rectangle &domain, int width, int height)
+void FuncDrawer::render_pixbuf(const Rectangle &domain, int width, int height)
+{
+	{
+		LOCK;
+		if (!m_p_render_thread)
+		{
+			m_p_render_thread = Glib::Thread::create(
+					sigc::bind(sigc::mem_fun(*this, &FuncDrawer::render_pixbuf_do),
+						domain, width, height), true);
+		}
+	}
+}
+
+void FuncDrawer::render_pixbuf_do(const Rectangle &domain, int width, int height)
 {
 	if (width == m_prev_width && height == m_prev_height && domain == m_prev_domain)
 		return;
-	m_prev_width = width;
-	m_prev_height = height;
 
 	Real_t x0 = domain.left, y0 = domain.bottom,
 		   x1 = domain.right, y1 = domain.top;
@@ -46,15 +59,23 @@ void FuncDrawer::gen_pixbuf(const Rectangle &domain, int width, int height)
 		else
 			y1 = y0 + (x1 - x0) / r2;
 	}
+	Rectangle new_domain(x0, y0, x1, y1);
 
-	m_prev_domain = Rectangle(x0, y0, x1, y1);
-
-	m_p_pixbuf = Gdk::Pixbuf::create(
+	Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create(
 			Gdk::COLORSPACE_RGB, false, 8, width, height);
 
-	FillImageProgressReporter x;
-	m_func.fill_image(m_p_pixbuf->get_pixels(), width, height,
-			m_prev_domain, x);
+	FillImageProgressReporter x; // XXX
+	m_func.fill_image(pixbuf->get_pixels(), width, height,
+			new_domain, x);
+
+
+	{
+		LOCK;
+		m_p_pixbuf = pixbuf;
+		m_prev_width = width;
+		m_prev_height = height;
+		m_prev_domain = Rectangle(x0, y0, x1, y1);
+	}
 }
 
 bool FuncDrawer::on_expose_event(GdkEventExpose *event)
@@ -63,7 +84,12 @@ bool FuncDrawer::on_expose_event(GdkEventExpose *event)
 	if (win)
 	{
 		Gtk::Allocation allocation = this->get_allocation();
-		gen_pixbuf(m_prev_domain, allocation.get_width(), allocation.get_height());
+		render_pixbuf(m_prev_domain, allocation.get_width(), allocation.get_height());
+		if (m_p_render_thread)
+		{
+			m_p_render_thread->join();
+			m_p_render_thread = NULL;
+		}
 		win->draw_pixbuf(Gdk::GC::create(win),
 				m_p_pixbuf,
 				event->area.x, event->area.y,	// src x y

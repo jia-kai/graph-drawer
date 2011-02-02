@@ -1,6 +1,6 @@
 /*
  * $File func_drawer.h
- * $Date: Tue Feb 01 16:41:08 2011 +0800
+ * $Date: Wed Feb 02 20:35:55 2011 +0800
  *
  * func_drawer class inherited from Gtk::DrawingArea
  *
@@ -11,6 +11,7 @@
 
 #include "function.h"
 #include <gtkmm/drawingarea.h>
+#include <glibmm/thread.h>
 
 class FuncDrawer : public Gtk::DrawingArea
 {
@@ -19,9 +20,11 @@ class FuncDrawer : public Gtk::DrawingArea
 		virtual ~FuncDrawer();
 	
 	private:
-		void gen_pixbuf(const Rectangle &domain, int width, int height);
+		void render_pixbuf(const Rectangle &domain, int width, int height);
 		// generate a pixbuf with specified width and height,
 		// using function values in @domain and update m_prev_domain
+
+		void render_pixbuf_do(const Rectangle &domain, int width, int height);
 
 		bool on_expose_event(GdkEventExpose* event);
 
@@ -29,6 +32,9 @@ class FuncDrawer : public Gtk::DrawingArea
 		Rectangle m_prev_domain;
 		int m_prev_width, m_prev_height;
 		Glib::RefPtr<Gdk::Pixbuf> m_p_pixbuf;
+
+		Glib::Thread *m_p_render_thread;
+		Glib::Mutex m_mutex;
 };
 
 #endif

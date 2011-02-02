@@ -1,10 +1,10 @@
 # $File: Makefile
-# $Date: Mon Jan 31 23:08:57 2011 +0800
+# $Date: Wed Feb 02 21:01:04 2011 +0800
 
 OBJ_DIR = obj
 TARGET = graph-drawer
 
-PKGCONFIG_LIBS = gtkmm-2.4
+PKGCONFIG_LIBS = gtkmm-2.4 glibmm-2.4
 INCLUDE_DIR = -I src/include -I src
 DEFINES = -D_DEBUG_BUILD_
 CXXFLAGS = -Wall -Wextra  \
@@ -17,15 +17,9 @@ OBJS = $(addprefix $(OBJ_DIR)/,$(CXXSOURCES:.cpp=.o))
 DEPFILES = $(OBJS:.o=.d)
 
 
-.PHONY: all clean run
+.PHONY: all clean run hg
 
 all: $(TARGET)
-
-clean:
-	rm -rf $(OBJ_DIR) $(TARGET)
-
-run: $(TARGET)
-	./$(TARGET)
 
 $(OBJ_DIR)/%.o: %.cpp
 	@echo "[cxx] $< ..."
@@ -41,4 +35,15 @@ sinclude $(DEPFILES)
 $(TARGET): $(OBJS)
 	@echo "Linking ..."
 	@$(CXX) $(OBJS) -o $@ $(LDFLAGS)
+
+
+clean:
+	rm -rf $(OBJ_DIR) $(TARGET)
+
+run: $(TARGET)
+	./$(TARGET)
+
+hg:
+	hg addremove
+	hg commit -u jiakai
 
