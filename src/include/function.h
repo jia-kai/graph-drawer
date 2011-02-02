@@ -1,6 +1,6 @@
 /*
  * $File: function.h
- * $Date: Mon Jan 31 22:39:36 2011 +0800
+ * $Date: Wed Feb 02 21:20:09 2011 +0800
  *
  * base function class
  */
@@ -19,8 +19,8 @@ class Function
 		class FillImageProgressReporter
 		{
 			public:
-				virtual void report(double percentage) = 0;
-				// @percentage should be in [0, 100]
+				virtual void report(double progress) = 0;
+				// @progress should be in [0, 1]
 		};
 		virtual void fill_image(uint8_t *buf, int width, int height,
 				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const = 0;
