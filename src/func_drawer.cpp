@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Wed Feb 02 23:42:24 2011 +0800
+ * $Date: Thu Feb 03 21:43:13 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -33,6 +33,11 @@ class FuncDrawer::RenderProgressBar : public Function::FillImageProgressReporter
 
 		// current progress, in [0, 1]
 		double m_progress;
+
+		static const double
+			BAR_WIDTH	= 0.8,	// relative to window width
+			BAR_HEIGHT	= 30,	// absolute value in pixels
+			FONT_SIZE	= 20;
 };
 
 FuncDrawer::FuncDrawer(const Function &func) :
@@ -136,6 +141,7 @@ void FuncDrawer::RenderProgressBar::set_bg_pixbuf(Glib::RefPtr<Gdk::Pixbuf> &bg_
 
 void FuncDrawer::RenderProgressBar::report(double progress)
 {
+	m_progress = progress;
 }
 
 void FuncDrawer::RenderProgressBar::redraw(int x, int y, int width, int height)
@@ -153,6 +159,36 @@ void FuncDrawer::RenderProgressBar::redraw(int x, int y, int width, int height)
 			cr->paint();
 		}
 
+		Gtk::Allocation allocation = m_p_drawing_area->get_allocation();
+		width = allocation.get_width();
+		height = allocation.get_height();
+
+		report(0.3);
+
+		cr->set_line_width(2);
+		cr->set_source_rgba(1, 1, 1, 0.5);
+		cr->rectangle(width * (1.0 - BAR_WIDTH) * 0.5,
+				(height - BAR_HEIGHT) * 0.5, width * BAR_WIDTH, BAR_HEIGHT);
+		cr->fill();
+
+
+		cr->set_source_rgba(0.4, 0.4, 0.6, 0.6);
+		cr->rectangle(width * (1.0 - BAR_WIDTH) * 0.5,
+				(height - BAR_HEIGHT) * 0.5, width * BAR_WIDTH * m_progress, BAR_HEIGHT);
+		cr->fill();
+
+
+		cr->set_source_rgba(0, 0, 0, 0.8);
+		cr->set_font_size(FONT_SIZE);
+		cr->select_font_face("Monospace", Cairo::FONT_SLANT_NORMAL, Cairo::FONT_WEIGHT_NORMAL);
+		char rpbar_msg[256];
+		sprintf(rpbar_msg, "Rendering %.2lf%% ...", m_progress * 100);
+		Cairo::TextExtents rmsg_extents;
+		cr->get_text_extents(rpbar_msg, rmsg_extents);
+		cr->move_to(width * 0.5 - (rmsg_extents.x_bearing + rmsg_extents.x_advance) * 0.5,
+				height * 0.5 - (rmsg_extents.y_bearing + rmsg_extents.y_advance) * 0.5);
+		cr->show_text(rpbar_msg);
+		cr->stroke();
 	}
 }
 
