@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Fri Feb 04 22:11:09 2011 +0800
+ * $Date: Fri Feb 04 22:56:24 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -87,6 +87,7 @@ void FuncDrawer::render_pixbuf_do(const Rectangle &domain, int width, int height
 			y1 = y0 + (x1 - x0) / r2;
 	}
 	Rectangle new_domain(x0, y0, x1, y1);
+	g_assert(fabs((x1 - x0) / (y1 - y0) - Real_t(width) / height) <= EPS);
 
 	Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create(
 			Gdk::COLORSPACE_RGB, false, 8, width, height);
@@ -117,13 +118,19 @@ void FuncDrawer::report(double progress)
 {
 	{
 		LOCK;
-		if (m_render_thread_exit_flag)
-			throw Glib::Thread::Exit();
 		if (progress - m_render_progress > PROGRESS_BAR_DELTA)
 		{
 			m_render_progress = progress;
 			m_sig_progress.emit();
 		}
+	}
+}
+
+bool FuncDrawer::test_abort()
+{
+	{
+		LOCK;
+		return m_render_thread_exit_flag;
 	}
 }
 
@@ -213,7 +220,7 @@ void FuncDrawer::draw_rpbar(int x, int y, int width, int height)
 			// progress rectangle
 			bar_width -= PROGRESS_BAR_BORDER;
 			bar_height -= PROGRESS_BAR_BORDER;
-			cr->set_source_rgba(0.4, 0.4, 0.6, 0.6);
+			cr->set_source_rgba(0.6, 0.2, 0.1, 0.7);
 			cr->rectangle(
 					(width - bar_width) * 0.5,
 					(height - bar_height) * 0.5,

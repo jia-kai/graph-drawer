@@ -1,6 +1,6 @@
 /*
  * $File: function.h
- * $Date: Thu Feb 03 21:53:14 2011 +0800
+ * $Date: Fri Feb 04 22:43:30 2011 +0800
  *
  * base function class
  */
@@ -21,6 +21,10 @@ class Function
 			public:
 				virtual void report(double progress) = 0;
 				// @progress should be in [0, 1]
+
+				virtual bool test_abort() = 0;
+				// the computation function should return
+				// as soon as it finds test_abort() returns true
 		};
 		virtual void fill_image(uint8_t *buf, int width, int height,
 				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const = 0;

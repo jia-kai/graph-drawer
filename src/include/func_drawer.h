@@ -1,6 +1,6 @@
 /*
  * $File func_drawer.h
- * $Date: Fri Feb 04 21:04:02 2011 +0800
+ * $Date: Fri Feb 04 22:42:01 2011 +0800
  *
  * func_drawer class inherited from Gtk::DrawingArea
  *
@@ -20,7 +20,10 @@ class FuncDrawer : public Gtk::DrawingArea, Function::FillImageProgressReporter
 	public:
 		explicit FuncDrawer(const Function &func);
 		virtual ~FuncDrawer();
+
+		// implementation for Function::FillImageProgressReporter
 		void report(double progress);
+		bool test_abort();
 	
 	private:
 		bool render_pixbuf(const Rectangle &domain, int width, int height);

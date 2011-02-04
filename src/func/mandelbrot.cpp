@@ -1,6 +1,6 @@
 /*
  * $File: mandelbrot.cpp
- * $Date: Fri Feb 04 22:09:55 2011 +0800
+ * $Date: Fri Feb 04 22:55:31 2011 +0800
  *
  * compute the Mandelbrot set
  *
@@ -41,10 +41,12 @@ void Function_mandelbrot::fill_image(uint8_t *buf, int width, int height,
 
 			int color = (int)(256.0 * 256 * 256 * cnt / LIMIT);
 			*(buf ++) = color >> 16;
-			*(buf ++) = (color >> 8) & 0xFF;
 			*(buf ++) = color & 0xFF;
+			*(buf ++) = (color >> 8) & 0xFF;
 
 			progress_reporter.report(progress += progress_delta);
+			if (progress_reporter.test_abort())
+				return;
 		}
 		y0 += delta_y;
 	}
