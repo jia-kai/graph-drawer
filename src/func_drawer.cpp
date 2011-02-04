@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Fri Feb 04 21:36:30 2011 +0800
+ * $Date: Fri Feb 04 22:11:09 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -14,7 +14,7 @@
 #define LOCK Glib::Mutex::Lock _mutex_lock_var_(m_mutex)
 
 static const double
-	PROGRESS_BAR_DELTA	= 0.01,	// the bar will be redrawed after making at lest such progress
+	PROGRESS_BAR_DELTA	= 0.002,// the bar will be redrawed after making at lest such progress
 	PROGRESS_BAR_WIDTH	= 0.8,	// relative width to the width of the window
 	PROGRESS_BAR_HEIGHT	= 30,	// height in pixels
 	PROGRESS_BAR_BORDER	= 5,	// border width in pixels
@@ -117,6 +117,8 @@ void FuncDrawer::report(double progress)
 {
 	{
 		LOCK;
+		if (m_render_thread_exit_flag)
+			throw Glib::Thread::Exit();
 		if (progress - m_render_progress > PROGRESS_BAR_DELTA)
 		{
 			m_render_progress = progress;
@@ -151,21 +153,15 @@ bool FuncDrawer::on_expose_event(GdkEventExpose *event)
 {
 	if (event)
 	{
-		m_mutex.lock();
-		if (m_p_render_thread)
+		Gtk::Allocation allocation = this->get_allocation();
+		if (render_pixbuf(m_prev_domain, allocation.get_width(), allocation.get_height()))
 		{
-			m_mutex.unlock();
-			draw_rpbar(event->area.x, event->area.y,
+			draw_pixbuf(event->area.x, event->area.y,
 					event->area.width, event->area.height);
 		} else
 		{
-			m_mutex.unlock();
-			Gtk::Allocation allocation = this->get_allocation();
-			if (render_pixbuf(m_prev_domain, allocation.get_width(), allocation.get_height()))
-			{
-				draw_pixbuf(event->area.x, event->area.y,
-						event->area.width, event->area.height);
-			}
+			draw_rpbar(event->area.x, event->area.y,
+					event->area.width, event->area.height);
 		}
 	}
 	return true;

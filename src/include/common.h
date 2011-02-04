@@ -1,6 +1,6 @@
 /*
  * $File: common.h
- * $Date: Mon Jan 31 23:36:58 2011 +0800
+ * $Date: Fri Feb 04 22:11:37 2011 +0800
  *
  * some common definitions and constants
  */
@@ -8,7 +8,7 @@
 #ifndef _HEADER_COMMON_
 #define _HEADER_COMMON_
 
-typedef double Real_t;
+typedef float Real_t;
 static const Real_t EPS = 1e-6;
 
 class Rectangle
