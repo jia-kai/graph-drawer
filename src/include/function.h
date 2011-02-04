@@ -1,6 +1,6 @@
 /*
  * $File: function.h
- * $Date: Wed Feb 02 21:20:09 2011 +0800
+ * $Date: Thu Feb 03 21:53:14 2011 +0800
  *
  * base function class
  */
@@ -25,6 +25,7 @@ class Function
 		virtual void fill_image(uint8_t *buf, int width, int height,
 				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const = 0;
 		// it's guaranteed that the @width/@height ratio is the same as that of @domain when this function get called
+		// progress_reporter.report must be called after finishing each pixel
 };
 
 #endif

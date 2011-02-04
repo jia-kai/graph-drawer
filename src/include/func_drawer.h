@@ -1,6 +1,6 @@
 /*
  * $File func_drawer.h
- * $Date: Wed Feb 02 22:45:26 2011 +0800
+ * $Date: Thu Feb 03 23:09:20 2011 +0800
  *
  * func_drawer class inherited from Gtk::DrawingArea
  *
@@ -21,13 +21,16 @@ class FuncDrawer : public Gtk::DrawingArea
 		virtual ~FuncDrawer();
 	
 	private:
-		void render_pixbuf(const Rectangle &domain, int width, int height);
+		bool render_pixbuf(const Rectangle &domain, int width, int height);
 		// generate a pixbuf with specified width and height,
 		// using function values in @domain and update m_prev_domain
+		// return true if current pixbuf is valid,
+		//     or false while creating a new thread rendering the pixbuf
 
 		void render_pixbuf_do(const Rectangle &domain, int width, int height);
 
 		bool on_expose_event(GdkEventExpose* event);
+		void draw_pixbuf(int x, int y, int width, int height);
 
 
 		class RenderProgressBar;
@@ -36,14 +39,20 @@ class FuncDrawer : public Gtk::DrawingArea
 		// function to be graphed
 		const Function &m_func;
 
-		// previous function domain and image size
+		// previous successfully rendered function domain and image size
 		Rectangle m_prev_domain;
 		int m_prev_width, m_prev_height;
 
 		// rendered pixbuf
 		Glib::RefPtr<Gdk::Pixbuf> m_p_pixbuf;
 
-		Glib::Thread *m_p_render_thread;
+		// currently rendered function image size
+		int m_cur_render_width, m_cur_render_height;
+
+		// rendering thread should exit if this flag is set
+		bool m_render_thread_exit_flag;
+
+		Glib::Thread *m_p_render_thread; // NULL iff not rendering now
 		Glib::Mutex m_mutex;
 
 		// progress bar for rendering
