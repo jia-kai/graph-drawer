@@ -1,6 +1,6 @@
 /*
  * $File func_drawer.h
- * $Date: Thu Feb 03 23:09:20 2011 +0800
+ * $Date: Fri Feb 04 21:04:02 2011 +0800
  *
  * func_drawer class inherited from Gtk::DrawingArea
  *
@@ -12,13 +12,15 @@
 #include "function.h"
 #include <gtkmm/drawingarea.h>
 #include <glibmm/thread.h>
+#include <glibmm/dispatcher.h>
 #include <gdkmm/general.h>
 
-class FuncDrawer : public Gtk::DrawingArea
+class FuncDrawer : public Gtk::DrawingArea, Function::FillImageProgressReporter
 {
 	public:
 		explicit FuncDrawer(const Function &func);
 		virtual ~FuncDrawer();
+		void report(double progress);
 	
 	private:
 		bool render_pixbuf(const Rectangle &domain, int width, int height);
@@ -28,12 +30,15 @@ class FuncDrawer : public Gtk::DrawingArea
 		//     or false while creating a new thread rendering the pixbuf
 
 		void render_pixbuf_do(const Rectangle &domain, int width, int height);
+		// thread for rendering the pixbuf
+
+		void draw_pixbuf(int x, int y, int width, int height);
+		void draw_rpbar(int x, int y, int width, int height);
+		// draw the rendered pixbuf or rendering progress bar
+		// in the specified rectangle, or the whole DrawingArea
+		// if called with (0, 0, 0, 0)
 
 		bool on_expose_event(GdkEventExpose* event);
-		void draw_pixbuf(int x, int y, int width, int height);
-
-
-		class RenderProgressBar;
 
 
 		// function to be graphed
@@ -52,11 +57,11 @@ class FuncDrawer : public Gtk::DrawingArea
 		// rendering thread should exit if this flag is set
 		bool m_render_thread_exit_flag;
 
+		double m_render_progress;
+		Glib::Dispatcher m_sig_progress, m_sig_render_done;
+
 		Glib::Thread *m_p_render_thread; // NULL iff not rendering now
 		Glib::Mutex m_mutex;
-
-		// progress bar for rendering
-		RenderProgressBar *m_p_rpbar; // RP ++ (ignore if puzzled)
 };
 
 #endif
