@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Sat Feb 05 19:59:13 2011 +0800
+ * $Date: Sat Feb 05 21:16:04 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -135,6 +135,18 @@ bool FuncDrawer::test_abort()
 	}
 }
 
+void FuncDrawer::stop_render()
+{
+	m_mutex.lock();
+	if (m_p_render_thread)
+	{
+		m_render_thread_exit_flag = true;
+		m_mutex.unlock();
+		m_p_render_thread->join();
+	} else
+		m_mutex.unlock();
+}
+
 bool FuncDrawer::render_pixbuf(const Render_param_t &param)
 {
 	m_mutex.lock();
@@ -189,12 +201,9 @@ void FuncDrawer::render_pixbuf_do()
 
 	{
 		LOCK;
-		if (!m_render_thread_exit_flag)
-		{
-			m_prev_rparam = m_cur_rparam;
-			m_sig_render_done.emit();
-			m_p_render_thread = NULL;
-		}
+		m_prev_rparam = m_cur_rparam;
+		m_sig_render_done.emit();
+		m_p_render_thread = NULL;
 	}
 }
 
@@ -216,7 +225,6 @@ void FuncDrawer::draw_pixbuf(int x, int y, int width, int height)
 					x, y,	// dest x y
 					width, height,
 					Gdk::RGB_DITHER_NONE, 0, 0);
-			this->save_to_bmp("/tmp/graph.bmp");
 		}
 	}
 }
@@ -314,14 +322,10 @@ void FuncDrawer::draw_rpbar(int x, int y, int width, int height)
 
 void FuncDrawer::save_to_bmp(const std::string &fpath)
 {
-	Glib::RefPtr<Gdk::Drawable> win = this->get_window();
-	if (win)
 	{
-		Gtk::Allocation allocation = this->get_allocation();
-		Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create(
-				win, 0, 0,
-				allocation.get_width(), allocation.get_height());
-		pixbuf->save(fpath, "bmp");
+		LOCK;
+		if (!m_p_render_thread)
+			m_p_pixbuf->save(fpath, "bmp");
 	}
 }
 
@@ -338,12 +342,36 @@ void FuncDrawer::on_select(const Rectangle &area)
 		Gtk::Allocation allocation = this->get_allocation();
 		double w = allocation.get_width(),
 			   h = allocation.get_height();
-		Rectangle d1(
+		set_domain(Rectangle(
 				m_func_domain.x + area.x / w * m_func_domain.width,
 				m_func_domain.y + area.y / h * m_func_domain.height,
 				m_func_domain.width * area.width / w,
-				m_func_domain.height * area.height / h);
-		set_domain(d1);
+				m_func_domain.height * area.height / h));
 	}
+}
+
+void FuncDrawer::zoom(double factor)
+{
+	Rectangle d1;
+	d1.width = m_func_domain.width * factor;
+	d1.height = m_func_domain.height * factor;
+	d1.x = m_func_domain.x - (d1.width - m_func_domain.width) * 0.5;
+	d1.y = m_func_domain.y - (d1.height - m_func_domain.height) * 0.5;
+	set_domain(d1);
+}
+
+bool FuncDrawer::on_motion_notify_event(GdkEventMotion *event)
+{
+	Gtk::Allocation allocation = this->get_allocation();
+	double w = allocation.get_width(),
+		   h = allocation.get_height();
+	on_cursor_motion(
+			m_func_domain.x + event->x / w * m_func_domain.width,
+			m_func_domain.y + event->y / h * m_func_domain.height);
+	return SelectionArea::on_motion_notify_event(event);
+}
+
+void FuncDrawer::on_cursor_motion(Real_t, Real_t)
+{
 }
 

@@ -1,6 +1,6 @@
 /*
  * $File: selection_area.cpp
- * $Date: Sat Feb 05 19:59:23 2011 +0800
+ * $Date: Sat Feb 05 20:50:44 2011 +0800
  */
 /*
 	This file is part of graph-drawer, a gtkmm based function graph drawer
@@ -88,7 +88,8 @@ bool SelectionArea::on_button_release_event(GdkEventButton *event)
 			return true;
 		m_is_selecting = false;
 		draw_selection();
-		on_select(m_selection);
+		if (m_selection.width > 0 && m_selection.height > 0)
+			on_select(m_selection);
 	}
 	return true;
 }

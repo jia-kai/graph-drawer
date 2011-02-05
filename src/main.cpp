@@ -1,6 +1,6 @@
 /*
  * $File: main.cpp
- * $Date: Sat Feb 05 19:59:15 2011 +0800
+ * $Date: Sat Feb 05 21:26:19 2011 +0800
  */
 /*
 	This file is part of graph-drawer, a gtkmm based function graph drawer
@@ -23,31 +23,117 @@
 
 #include "func_drawer.h"
 #include "func/mandelbrot.h"
+
 #include <gtkmm/main.h>
 #include <gtkmm/window.h>
+#include <gtkmm/label.h>
+#include <gtkmm/box.h>
+#include <gtkmm/filechooserdialog.h>
+#include <gtkmm/stock.h>
 #include <glibmm/thread.h>
+#include <cstdio>
+
+static const double ZOOM_OUT_FACTOR = 1.5;
+
+class FuncDrawerUI : public FuncDrawer
+{
+	public:
+		FuncDrawerUI(const Function &func, Gtk::Label *label, Gtk::Window *par_win) :
+			FuncDrawer(func), m_p_label(label), m_p_par_win(par_win)
+		{
+			this->add_events(Gdk::KEY_PRESS_MASK);
+			this->set_can_focus();
+		}
+
+		~FuncDrawerUI()
+		{
+		}
+	
+	private:
+		Gtk::Label *m_p_label;
+		Gtk::Window *m_p_par_win;
+
+		void on_size_request(Gtk::Requisition *requisition)
+		{
+			requisition->width = 400;
+			requisition->height = 400;
+		}
+
+		void on_cursor_motion(Real_t x, Real_t y)
+		{
+			char str[256];
+			sprintf(str, "X: %.5le  Y: %.5le", x, y);
+			m_p_label->set_text(str);
+		}
+
+		bool on_key_press_event(GdkEventKey *event)
+		{
+			switch (event->keyval)
+			{
+				case 'a':
+					this->stop_render();
+					break;
+				case 's':
+					save();
+					break;
+				case 'z':
+					this->zoom(ZOOM_OUT_FACTOR);
+					break;
+			}
+			return true;
+		}
+
+		void save()
+		{
+			Gtk::FileChooserDialog dialog(*m_p_par_win, "Save Image", Gtk::FILE_CHOOSER_ACTION_SAVE);
+			dialog.set_transient_for(*m_p_par_win);
+			dialog.set_do_overwrite_confirmation();
+			dialog.add_button(Gtk::Stock::CANCEL, Gtk::RESPONSE_CANCEL);
+			dialog.add_button(Gtk::Stock::SAVE, Gtk::RESPONSE_OK);
+
+			Gtk::FileFilter filter;
+			filter.set_name("Bitmap Image File");
+			filter.add_mime_type("image/bmp");
+			filter.add_pattern("*.bmp");
+			dialog.add_filter(filter);
+
+			if (dialog.run() == Gtk::RESPONSE_OK)
+				this->save_to_bmp(dialog.get_filename());
+		}
+};
 
 int main(int argc, char **argv)
 {
 	if (!Glib::thread_supported())
 		Glib::thread_init();
+	printf(
+		"key bindings:\n"
+		"    s -- save image to file\n"
+		"    a -- abort rendering process\n"
+		"    z -- zoom out by factor %.3lf\n"
+		"mouse operation:\n"
+		"    hold the left button to draw a box to zoom in, and\n"
+		"    press right button while drawing to cancel.\n",
+		ZOOM_OUT_FACTOR);
 
 	Gtk::Main kit(argc, argv);
 	Gtk::Window win;
 	win.set_title("Graph Drawer");
-	win.set_default_size(400, 400);
 
 	Function_mandelbrot func;
-	FuncDrawer drawer(func);
-	win.add(drawer);
-	drawer.show();
+
+	Gtk::VBox box;
+	Gtk::Label label("X: Y:");
+	FuncDrawerUI drawer(func, &label, &win);
+	box.pack_start(drawer);
+	box.pack_end(label, false, false);
+
+
+	win.add(box);
+	win.show_all();
 
 	Gtk::Main::run(win);
 
 	return 0;
 }
 
-/*
-	this->add_events(Gdk::KEY_PRESS_MASK);
-	this->set_can_focus();
-	*/

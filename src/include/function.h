@@ -1,6 +1,6 @@
 /*
  * $File: function.h
- * $Date: Sat Feb 05 19:59:38 2011 +0800
+ * $Date: Sat Feb 05 20:40:09 2011 +0800
  *
  * base function class
  */
@@ -32,6 +32,8 @@
 class Function
 {
 	public:
+		virtual ~Function() {}
+
 		virtual Rectangle get_initial_domain() const = 0;
 
 		class FillImageProgressReporter
@@ -42,7 +44,7 @@ class Function
 
 				virtual bool test_abort() = 0;
 				// the computation function should return
-				// as soon as it finds test_abort() returns true
+				// as soon as possible if it finds test_abort() returns true
 		};
 		virtual void fill_image(uint8_t *buf, int width, int height,
 				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const = 0;

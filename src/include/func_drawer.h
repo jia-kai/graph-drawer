@@ -1,6 +1,6 @@
 /*
  * $File func_drawer.h
- * $Date: Sat Feb 05 19:59:31 2011 +0800
+ * $Date: Sat Feb 05 20:53:07 2011 +0800
  *
  * func_drawer class inherited from Gtk::DrawingArea
  *
@@ -43,15 +43,23 @@ class FuncDrawer : public SelectionArea, public Function::FillImageProgressRepor
 
 		void save_to_bmp(const std::string &fpath);
 
-		void zoom_out(double factor);
+		void zoom(double factor);
 		// @factor > 1 for zoom out, < 1 for zoom in
 
 		const Rectangle& get_domain();
 		void set_domain(const Rectangle &domain);
 
+		void stop_render();
+
 		// implementation for Function::FillImageProgressReporter
 		void report(double progress);
 		bool test_abort();
+	
+	protected:
+		virtual void on_cursor_motion(Real_t x, Real_t y);
+		// callback when the cursor is moved
+		// (@x, @y) corresponds to the point in the domain
+		virtual bool on_motion_notify_event(GdkEventMotion *event);
 	
 	private:
 		struct Render_param_t
