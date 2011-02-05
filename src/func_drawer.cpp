@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Sat Feb 05 18:15:40 2011 +0800
+ * $Date: Sat Feb 05 18:35:11 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -208,6 +208,8 @@ bool FuncDrawer::on_expose_event(GdkEventExpose *event)
 	if (event)
 	{
 		Gtk::Allocation allocation = this->get_allocation();
+		int width = allocation.get_width(), height = allocation.get_height();
+		this->set_ratio((Real_t)width / height);
 		if (render_pixbuf(Render_param_t(m_func_domain, allocation.get_width(), allocation.get_height())))
 		{
 			draw_pixbuf(event->area.x, event->area.y,
