@@ -1,5 +1,5 @@
 # $File: Makefile
-# $Date: Sat Feb 05 12:25:25 2011 +0800
+# $Date: Sat Feb 05 20:06:09 2011 +0800
 
 OBJ_DIR = obj
 TARGET = graph-drawer
@@ -46,4 +46,5 @@ run: $(TARGET)
 hg:
 	hg addremove
 	hg commit -u jiakai
+	hg push
 

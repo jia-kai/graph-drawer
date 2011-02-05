@@ -1,10 +1,28 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Sat Feb 05 18:35:11 2011 +0800
+ * $Date: Sat Feb 05 19:59:13 2011 +0800
  *
  * implementation of FuncDrawer class
  *
  */
+/*
+	This file is part of graph-drawer, a gtkmm based function graph drawer
+
+	Copyright (C) <2011>  Jiakai <jia.kai66@gmail.com>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include "func_drawer.h"
 
@@ -307,7 +325,25 @@ void FuncDrawer::save_to_bmp(const std::string &fpath)
 	}
 }
 
-void FuncDrawer::on_select(const Rectangle &)
+void FuncDrawer::on_select(const Rectangle &area)
 {
+	{
+		LOCK;
+		if (m_p_render_thread)
+			return;
+	}
+	Glib::RefPtr<Gdk::Drawable> win = this->get_window();
+	if (win)
+	{
+		Gtk::Allocation allocation = this->get_allocation();
+		double w = allocation.get_width(),
+			   h = allocation.get_height();
+		Rectangle d1(
+				m_func_domain.x + area.x / w * m_func_domain.width,
+				m_func_domain.y + area.y / h * m_func_domain.height,
+				m_func_domain.width * area.width / w,
+				m_func_domain.height * area.height / h);
+		set_domain(d1);
+	}
 }
 
