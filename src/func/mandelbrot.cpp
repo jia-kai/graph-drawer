@@ -1,6 +1,6 @@
 /*
  * $File: mandelbrot.cpp
- * $Date: Fri Feb 04 22:55:31 2011 +0800
+ * $Date: Sat Feb 05 16:36:58 2011 +0800
  *
  * compute the Mandelbrot set
  *
@@ -11,21 +11,21 @@
 
 Rectangle Function_mandelbrot::get_initial_domain() const
 {
-	return Rectangle(-2, -2, 2, 2);
+	return Rectangle(-2, -2, 4, 4);
 }
 
 void Function_mandelbrot::fill_image(uint8_t *buf, int width, int height,
 		const Rectangle &domain, FillImageProgressReporter &progress_reporter) const
 {
 	const int LIMIT = 100000;
-	Real_t delta_x = (domain.right - domain.left) / width,
-		   delta_y = (domain.top - domain.bottom) / height,
-		   y0 = domain.bottom,
+	Real_t delta_x = domain.width / width,
+		   delta_y = domain.height / height,
+		   y0 = domain.y,
 		   progress = 0,
 		   progress_delta = 1.0 / width / height;
 	for (int i = 0; i < height; i ++)
 	{
-		Real_t x0 = domain.left;
+		Real_t x0 = domain.x;
 		for (int j = 0; j < width; j ++)
 		{
 			Real_t cx = x0, cy = y0;

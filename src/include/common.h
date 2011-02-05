@@ -1,6 +1,6 @@
 /*
  * $File: common.h
- * $Date: Fri Feb 04 22:11:37 2011 +0800
+ * $Date: Sat Feb 05 18:15:29 2011 +0800
  *
  * some common definitions and constants
  */
@@ -14,9 +14,12 @@ static const Real_t EPS = 1e-6;
 class Rectangle
 {
 	public:
-		Real_t left, bottom, right, top;
-		Rectangle(Real_t x0 = 0, Real_t y0 = 0, Real_t x1 = 0, Real_t y1 = 0);
+		Real_t x, y, width, height;
+
+		Rectangle(Real_t x_ = 0, Real_t y_ = 0, Real_t width_ = 0, Real_t height_ = 0);
 		bool operator == (const Rectangle &n) const;
+		Rectangle& operator = (const Rectangle &n)
+		{ x = n.x; y = n.y; width = n.width; height = n.height; return *this; }
 };
 
 

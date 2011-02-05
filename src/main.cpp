@@ -1,6 +1,6 @@
 /*
  * $File: main.cpp
- * $Date: Wed Feb 02 20:09:00 2011 +0800
+ * $Date: Sat Feb 05 12:23:18 2011 +0800
  */
 
 #include "func_drawer.h"
@@ -29,3 +29,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
+/*
+	this->add_events(Gdk::KEY_PRESS_MASK);
+	this->set_can_focus();
+	*/

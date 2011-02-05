@@ -1,5 +1,5 @@
 # $File: Makefile
-# $Date: Wed Feb 02 22:46:02 2011 +0800
+# $Date: Sat Feb 05 12:25:25 2011 +0800
 
 OBJ_DIR = obj
 TARGET = graph-drawer
@@ -8,7 +8,7 @@ PKGCONFIG_LIBS = gtkmm-2.4 glibmm-2.4 cairomm-1.0
 INCLUDE_DIR = -I src/include -I src
 DEFINES = -D_DEBUG_BUILD_
 CXXFLAGS = -Wall -Wextra  \
-		   $(shell pkg-config --cflags $(PKGCONFIG_LIBS)) $(INCLUDE_DIR) $(DEFINES) -g
+		   $(shell pkg-config --cflags $(PKGCONFIG_LIBS)) $(INCLUDE_DIR) $(DEFINES) -g -O2
 LDFLAGS = $(shell pkg-config --libs $(PKGCONFIG_LIBS))
 
 CXX = g++

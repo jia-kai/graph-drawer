@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Fri Feb 04 22:56:24 2011 +0800
+ * $Date: Sat Feb 05 18:15:40 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -14,17 +14,56 @@
 #define LOCK Glib::Mutex::Lock _mutex_lock_var_(m_mutex)
 
 static const double
-	PROGRESS_BAR_DELTA	= 0.002,// the bar will be redrawed after making at lest such progress
+	PROGRESS_BAR_DELTA	= 0.009,// the bar will be redrawed after making at lest such progress
 	PROGRESS_BAR_WIDTH	= 0.8,	// relative width to the width of the window
 	PROGRESS_BAR_HEIGHT	= 30,	// height in pixels
 	PROGRESS_BAR_BORDER	= 5,	// border width in pixels
 	PROGRESS_BAR_FONT_SIZE	= 25;
 
+
+/*
+ * Implement FuncDrawer::Render_param_t
+ */
+FuncDrawer::Render_param_t::Render_param_t(const Rectangle &d, int w, int h):
+	domain(d), width(w), height(h)
+{
+	adjust();
+}
+
+bool FuncDrawer::Render_param_t::operator == (const Render_param_t &n) const
+{
+	return width == n.width && height == n.height && domain == n.domain;
+}
+
+void FuncDrawer::Render_param_t::adjust()
+{
+	Real_t r1 = domain.width / domain.height,
+		   r2 = Real_t(width) / height;
+	if (fabs(r1 - r2) > EPS)
+	{
+		if (r1 > r2)
+		{
+			Real_t w1 = domain.height * r2;
+			domain.x += (domain.width - w1) * 0.5;
+			domain.width = w1;
+		} else
+		{
+			Real_t h1 = domain.width / r2;
+			domain.y += (domain.height - h1) * 0.5;
+			domain.height = h1;
+		}
+	}
+}
+
+
+/*
+ * Implement FuncDrawer
+ */
 FuncDrawer::FuncDrawer(const Function &func) :
-	m_func(func), m_prev_domain(func.get_initial_domain()),
-	m_prev_width(-1), m_prev_height(-1),
+	m_func(func), m_func_domain(func.get_initial_domain()),
 	m_p_render_thread(NULL)
 {
+	m_prev_rparam.width = -1;	// make sure the image will be rendered
 	m_sig_progress.connect(sigc::bind(
 				sigc::mem_fun(*this, &FuncDrawer::draw_rpbar),
 				0, 0, 0, 0));
@@ -35,19 +74,60 @@ FuncDrawer::FuncDrawer(const Function &func) :
 
 FuncDrawer::~FuncDrawer()
 {
+	m_mutex.lock();
+	if (m_p_render_thread)
+	{
+		m_render_thread_exit_flag = true;
+		m_mutex.unlock();
+		m_p_render_thread->join();
+	} else m_mutex.unlock();
 }
 
-bool FuncDrawer::render_pixbuf(const Rectangle &domain, int width, int height)
+void FuncDrawer::report(double progress)
+{
+	{
+		LOCK;
+		if (m_render_thread_exit_flag)
+			return;
+		if (progress - m_render_progress > PROGRESS_BAR_DELTA)
+		{
+			m_render_progress = progress;
+			m_sig_progress.emit();
+		}
+	}
+}
+
+const Rectangle& FuncDrawer::get_domain()
+{
+	return m_func_domain;
+}
+
+void FuncDrawer::set_domain(const Rectangle &domain)
+{
+	m_func_domain = domain;
+	Gtk::Allocation allocation = this->get_allocation();
+	render_pixbuf(Render_param_t(domain, allocation.get_width(), allocation.get_height()));
+}
+
+bool FuncDrawer::test_abort()
+{
+	{
+		LOCK;
+		return m_render_thread_exit_flag;
+	}
+}
+
+bool FuncDrawer::render_pixbuf(const Render_param_t &param)
 {
 	m_mutex.lock();
 	if (m_p_render_thread)
 	{
-		if (width != m_cur_render_width || height != m_cur_render_height)
+		if (!(param == m_cur_rparam))
 		{
 			m_render_thread_exit_flag = true;
 			m_mutex.unlock();
 			m_p_render_thread->join();
-			m_prev_width = -1; // make sure it will be re-rendered
+			m_prev_rparam.width = -1; // make sure it will be re-rendered
 		} else
 		{
 			m_mutex.unlock();
@@ -57,38 +137,26 @@ bool FuncDrawer::render_pixbuf(const Rectangle &domain, int width, int height)
 		m_mutex.unlock();
 
 	// now the rendering thread can not be running, so locking is not needed
-	if (!(width == m_prev_width && height == m_prev_height && domain == m_prev_domain))
-	{
-		m_render_thread_exit_flag = false;
-		m_cur_render_width = width;
-		m_cur_render_height = height;
-		m_render_progress = 0;
-		m_p_render_thread = Glib::Thread::create(
-				sigc::bind(sigc::mem_fun(*this, &FuncDrawer::render_pixbuf_do),
-					domain, width, height), true);
-		return false;
-	}
-
-	return true;
+	if (param == m_prev_rparam)
+		return true;
+	m_render_thread_exit_flag = false;
+	m_cur_rparam = param;
+	m_render_progress = 0;
+	m_p_render_thread = Glib::Thread::create(
+			sigc::mem_fun(*this, &FuncDrawer::render_pixbuf_do), true);
+	return false;
 }
 
-void FuncDrawer::render_pixbuf_do(const Rectangle &domain, int width, int height)
+void FuncDrawer::render_pixbuf_do()
 {
-	Real_t x0 = domain.left, y0 = domain.bottom,
-		   x1 = domain.right, y1 = domain.top;
-
-	if (fabs((x1 - x0) / (y1 - y0) - Real_t(width) / height) > EPS)
+	Rectangle domain;
+	int width, height;
 	{
-		Real_t r1 = (x1 - x0) / (y1 - y0),
-			   r2 = Real_t(width) / height;
-		if (r1 > r2)
-			x1 = x0 + (y1 - y0) * r2;
-		else
-			y1 = y0 + (x1 - x0) / r2;
+		LOCK;
+		width = m_cur_rparam.width;
+		height = m_cur_rparam.height;
+		domain = m_cur_rparam.domain;
 	}
-	Rectangle new_domain(x0, y0, x1, y1);
-	g_assert(fabs((x1 - x0) / (y1 - y0) - Real_t(width) / height) <= EPS);
-
 	Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create(
 			Gdk::COLORSPACE_RGB, false, 8, width, height);
 	pixbuf->fill(0);
@@ -98,39 +166,17 @@ void FuncDrawer::render_pixbuf_do(const Rectangle &domain, int width, int height
 	}
 
 	m_func.fill_image(pixbuf->get_pixels(), width, height,
-			new_domain, *this);
+			domain, *this);
 
 
 	{
 		LOCK;
 		if (!m_render_thread_exit_flag)
 		{
-			m_prev_width = width;
-			m_prev_height = height;
-			m_prev_domain = Rectangle(x0, y0, x1, y1);
+			m_prev_rparam = m_cur_rparam;
 			m_sig_render_done.emit();
 			m_p_render_thread = NULL;
 		}
-	}
-}
-
-void FuncDrawer::report(double progress)
-{
-	{
-		LOCK;
-		if (progress - m_render_progress > PROGRESS_BAR_DELTA)
-		{
-			m_render_progress = progress;
-			m_sig_progress.emit();
-		}
-	}
-}
-
-bool FuncDrawer::test_abort()
-{
-	{
-		LOCK;
-		return m_render_thread_exit_flag;
 	}
 }
 
@@ -152,6 +198,7 @@ void FuncDrawer::draw_pixbuf(int x, int y, int width, int height)
 					x, y,	// dest x y
 					width, height,
 					Gdk::RGB_DITHER_NONE, 0, 0);
+			this->save_to_bmp("/tmp/graph.bmp");
 		}
 	}
 }
@@ -161,7 +208,7 @@ bool FuncDrawer::on_expose_event(GdkEventExpose *event)
 	if (event)
 	{
 		Gtk::Allocation allocation = this->get_allocation();
-		if (render_pixbuf(m_prev_domain, allocation.get_width(), allocation.get_height()))
+		if (render_pixbuf(Render_param_t(m_func_domain, allocation.get_width(), allocation.get_height())))
 		{
 			draw_pixbuf(event->area.x, event->area.y,
 					event->area.width, event->area.height);
@@ -243,5 +290,22 @@ void FuncDrawer::draw_rpbar(int x, int y, int width, int height)
 			cr->stroke();
 		}
 	}
+}
+
+void FuncDrawer::save_to_bmp(const std::string &fpath)
+{
+	Glib::RefPtr<Gdk::Drawable> win = this->get_window();
+	if (win)
+	{
+		Gtk::Allocation allocation = this->get_allocation();
+		Glib::RefPtr<Gdk::Pixbuf> pixbuf = Gdk::Pixbuf::create(
+				win, 0, 0,
+				allocation.get_width(), allocation.get_height());
+		pixbuf->save(fpath, "bmp");
+	}
+}
+
+void FuncDrawer::on_select(const Rectangle &)
+{
 }
 
