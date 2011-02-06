@@ -1,6 +1,6 @@
 /*
  * $File: function.h
- * $Date: Sat Feb 05 20:40:09 2011 +0800
+ * $Date: Sat Feb 05 22:42:06 2011 +0800
  *
  * base function class
  */
@@ -50,6 +50,9 @@ class Function
 				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const = 0;
 		// it's guaranteed that the @width/@height ratio is the same as that of @domain when this function get called
 		// progress_reporter.report must be called after finishing each pixel
+
+		int get_cpu_num();
+		// get the number of CPUs currently available
 };
 
 #endif

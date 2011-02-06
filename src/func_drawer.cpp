@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Sat Feb 05 21:16:04 2011 +0800
+ * $Date: Sun Feb 06 10:51:01 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -32,7 +32,7 @@
 #define LOCK Glib::Mutex::Lock _mutex_lock_var_(m_mutex)
 
 static const double
-	PROGRESS_BAR_DELTA	= 0.009,// the bar will be redrawed after making at lest such progress
+	PROGRESS_BAR_DELTA	= 0.002,// the bar will be redrawed after making at lest such progress
 	PROGRESS_BAR_WIDTH	= 0.8,	// relative width to the width of the window
 	PROGRESS_BAR_HEIGHT	= 30,	// height in pixels
 	PROGRESS_BAR_BORDER	= 5,	// border width in pixels
@@ -103,6 +103,8 @@ FuncDrawer::~FuncDrawer()
 
 void FuncDrawer::report(double progress)
 {
+	if (progress > 1)
+		progress = 1;
 	{
 		LOCK;
 		if (m_render_thread_exit_flag)

@@ -1,9 +1,6 @@
 /*
- * $File: mandelbrot.h
- * $Date: Sat Feb 05 22:56:56 2011 +0800
- *
- * compute the Mandelbrot set
- *
+ * $File: function.cpp
+ * $Date: Sat Feb 05 22:43:14 2011 +0800
  */
 /*
 	This file is part of graph-drawer, a gtkmm based function graph drawer
@@ -24,21 +21,11 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _HEADER_MANDELBROT_
-#define _HEADER_MANDELBROT_
-
 #include "function.h"
+#include <unistd.h>
 
-class Function_mandelbrot : public Function
+int Function::get_cpu_num()
 {
-	public:
-		Function_mandelbrot();
-		Rectangle get_initial_domain() const;
-		void fill_image(uint8_t *buf, int width, int height,
-				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const;
+	return sysconf(_SC_NPROCESSORS_ONLN);
+}
 
-	private:
-		int m_nthread, m_nloop;
-};
-
-#endif
