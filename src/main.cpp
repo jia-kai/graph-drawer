@@ -1,6 +1,6 @@
 /*
  * $File: main.cpp
- * $Date: Sun Feb 06 12:21:06 2011 +0800
+ * $Date: Sun Feb 06 12:34:23 2011 +0800
  */
 /*
 	This file is part of graph-drawer, a gtkmm based function graph drawer
@@ -56,14 +56,15 @@ class FuncDrawerUI : public FuncDrawer
 
 		void on_size_request(Gtk::Requisition *requisition)
 		{
-			requisition->width = 400;
-			requisition->height = 400;
+			requisition->width = 500;
+			requisition->height = 500;
 		}
 
 		void on_cursor_motion(Real_t x, Real_t y)
 		{
 			char str[256];
-			sprintf(str, "X: %.5le  Y: %.5le", x, y);
+			sprintf(str, "X: %.5le  Y: %.5le W: %.2le H: %.2le", x, y, this->get_domain().width,
+					this->get_domain().height);
 			m_p_label->set_text(str);
 		}
 
