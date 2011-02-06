@@ -1,6 +1,6 @@
 /*
  * $File: mandelbrot.h
- * $Date: Sat Feb 05 22:56:56 2011 +0800
+ * $Date: Sun Feb 06 12:03:52 2011 +0800
  *
  * compute the Mandelbrot set
  *
@@ -33,11 +33,12 @@ class Function_mandelbrot : public Function
 {
 	public:
 		Function_mandelbrot();
-		Rectangle get_initial_domain() const;
+		Rectangle get_initial_domain();
 		void fill_image(uint8_t *buf, int width, int height,
-				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const;
+				const Rectangle &domain, FillImageProgressReporter &progress_reporter);
 
 	private:
+		void on_key_press(int keyval);
 		int m_nthread, m_nloop;
 };
 

@@ -1,6 +1,6 @@
 /*
  * $File: selection_area.h
- * $Date: Sat Feb 05 20:17:40 2011 +0800
+ * $Date: Sun Feb 06 12:15:22 2011 +0800
  *
  * a DrawingArea that enables the user to select some rectangular area
  *
@@ -43,6 +43,8 @@ class SelectionArea : public Gtk::DrawingArea
 		virtual bool on_button_press_event(GdkEventButton *event);
 		virtual bool on_button_release_event(GdkEventButton *event);
 		virtual bool on_motion_notify_event(GdkEventMotion *event);
+
+		virtual void on_right_button_press(int x, int y);
 
 		void set_ratio(Real_t ratio);
 		// set the width / height ratio of selection area,

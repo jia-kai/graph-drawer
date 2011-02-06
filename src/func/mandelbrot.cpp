@@ -1,6 +1,6 @@
 /*
  * $File: mandelbrot.cpp
- * $Date: Sun Feb 06 10:51:55 2011 +0800
+ * $Date: Sun Feb 06 12:08:02 2011 +0800
  *
  * compute the Mandelbrot set
  *
@@ -30,14 +30,21 @@
 #include <cstdio>
 #include <cstring>
 #include <cctype>
+#include <cmath>
 
 #include <unistd.h>
 #include <pthread.h>
 
 static const int
-	NITER_DEFAULT	= 100000, //65536,
-	NITER_PER_LOOP	= 1000, //NITER_DEFAULT, //512,
-	USLEEP_TIME		= 500000;
+	NITER_DEFAULT	= 65536, 
+	NITER_PER_LOOP	= 512,
+	USLEEP_TIME		= 500000,
+	COLOR_PALLETTE_SIZE	= 512;
+struct Rgb_t
+{
+	uint8_t r, g, b;
+};
+static Rgb_t color_pallette[COLOR_PALLETTE_SIZE];
 
 struct Thread_param_t
 {
@@ -64,9 +71,12 @@ static int str2num(const char *str);
 
 Function_mandelbrot::Function_mandelbrot()
 {
-	printf("Mandelbrot set: usable enviroment variables:\n"
+	printf("Mandelbrot set:\n"
+			"usable enviroment variables:\n"
 			"  threads   -- the number of rendering threads\n"
-			"  iteration -- the number of maximal iterations\n");
+			"  iteration -- the maximal number of iterations\n"
+			"key bindings:\n"
+			"  i -- read the maximal number of iterations from stdin\n");
 	m_nthread = str2num(getenv("threads"));
 	if (m_nthread <= 0)
 		m_nthread = this->get_cpu_num();
@@ -77,15 +87,21 @@ Function_mandelbrot::Function_mandelbrot()
 
 	printf("Mandelbrot set: use %d threads and %d iterations\n",
 			m_nthread, m_nloop * NITER_PER_LOOP);
+
+	srand(42);
+	for (int i = 0; i < COLOR_PALLETTE_SIZE; i ++)
+		color_pallette[i].r = (int)(rand() / (RAND_MAX + 1.0) * 256),
+		color_pallette[i].g = (int)(rand() / (RAND_MAX + 1.0) * 256),
+		color_pallette[i].b = (int)(rand() / (RAND_MAX + 1.0) * 256);
 }
 
-Rectangle Function_mandelbrot::get_initial_domain() const
+Rectangle Function_mandelbrot::get_initial_domain()
 {
 	return Rectangle(-2, -2, 4, 4);
 }
 
 void Function_mandelbrot::fill_image(uint8_t *buf, int width, int height,
-		const Rectangle &domain, FillImageProgressReporter &progress_reporter) const
+		const Rectangle &domain, FillImageProgressReporter &progress_reporter)
 {
 	Thread_param_t *params = new Thread_param_t[m_nthread];
 	pthread_t *threads = new pthread_t[m_nthread];
@@ -159,6 +175,23 @@ void Function_mandelbrot::fill_image(uint8_t *buf, int width, int height,
 	delete niter;
 }
 
+void Function_mandelbrot::on_key_press(int keyval)
+{
+	int n;
+	switch (keyval)
+	{
+		case 'i':
+			printf("Please enter the maximal number of iterations: ");
+			if (scanf("%d", &n) == 1 && n > 0)
+			{
+				m_nloop = (n - 1) / NITER_PER_LOOP + 1;
+				printf("Mandelbrot set: use %d threads and %d iterations\n",
+						m_nthread, m_nloop * NITER_PER_LOOP);
+			}
+			break;
+	}
+}
+
 int str2num(const char *str)
 {
 	if (!str)
@@ -177,6 +210,7 @@ void* thread_render(void *_param)
 {
 	Thread_param_t *paramptr = static_cast<Thread_param_t*>(_param),
 				   param = *paramptr;
+	int niter_per_pixel_tot = NITER_PER_LOOP * param.nloop;
 	for (int i = 0; i < param.nloop; i ++)
 	{
 		Real_t *cxptr = param.cx, *cyptr = param.cy,
@@ -205,12 +239,26 @@ void* thread_render(void *_param)
 			niter = NITER_PER_LOOP - niter;
 			*niterptr += niter;
 			paramptr->cur_niter_done += niter;
-			if (x * x + y * y > 4 || (i == param.nloop - 1 && !niter))
+			if (x * x + y * y > 4 || (i == param.nloop - 1 && niter == NITER_PER_LOOP))
 			{
-				int color = (int)(256 * 256 * 256 * (1.0 - double(*niterptr) / NITER_PER_LOOP / param.nloop));
-				buf[0] = color >> 16;
-				buf[1] = color & 0xFF;
-				buf[2] = (color >> 8) & 0xFF;
+				int n = *niterptr;
+				if (n == niter_per_pixel_tot)
+					buf[0] = buf[1] = buf[2] = 0;
+				else
+				{
+					if (n < COLOR_PALLETTE_SIZE)
+					{
+						buf[0] = color_pallette[n].r;
+						buf[1] = color_pallette[n].g;
+						buf[2] = color_pallette[n].b;
+					} else
+					{
+						int color = (int)(256 * 256 * 256 * (1.0 - double(n) / niter_per_pixel_tot));
+						buf[0] = color >> 16;
+						buf[1] = (color >> 8) & 0xFF;
+						buf[2] = color & 0xFF;
+					}
+				}
 				*niterptr = -1;
 				paramptr->cur_niter_done += (param.nloop - i - 1) * NITER_PER_LOOP + NITER_PER_LOOP - niter;
 			}

@@ -1,6 +1,6 @@
 /*
  * $File: func_drawer.cpp
- * $Date: Sun Feb 06 10:51:01 2011 +0800
+ * $Date: Sun Feb 06 12:19:21 2011 +0800
  *
  * implementation of FuncDrawer class
  *
@@ -77,7 +77,7 @@ void FuncDrawer::Render_param_t::adjust()
 /*
  * Implement FuncDrawer
  */
-FuncDrawer::FuncDrawer(const Function &func) :
+FuncDrawer::FuncDrawer(Function &func) :
 	m_func(func), m_func_domain(func.get_initial_domain()),
 	m_p_render_thread(NULL)
 {
@@ -371,6 +371,21 @@ bool FuncDrawer::on_motion_notify_event(GdkEventMotion *event)
 			m_func_domain.x + event->x / w * m_func_domain.width,
 			m_func_domain.y + event->y / h * m_func_domain.height);
 	return SelectionArea::on_motion_notify_event(event);
+}
+
+void FuncDrawer::on_right_button_press(int x, int y)
+{
+	Glib::RefPtr<Gdk::Drawable> win = this->get_window();
+	if (win)
+	{
+		Gtk::Allocation allocation = this->get_allocation();
+		double w = allocation.get_width(),
+			   h = allocation.get_height();
+		Rectangle d1(m_func_domain);
+		d1.x += (x / w - 0.5) * d1.width;
+		d1.y += (y / h - 0.5) * d1.height;
+		set_domain(d1);
+	}
 }
 
 void FuncDrawer::on_cursor_motion(Real_t, Real_t)

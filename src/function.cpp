@@ -1,6 +1,6 @@
 /*
  * $File: function.cpp
- * $Date: Sat Feb 05 22:43:14 2011 +0800
+ * $Date: Sun Feb 06 12:00:03 2011 +0800
  */
 /*
 	This file is part of graph-drawer, a gtkmm based function graph drawer
@@ -27,5 +27,9 @@
 int Function::get_cpu_num()
 {
 	return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+void Function::on_key_press(int)
+{
 }
 

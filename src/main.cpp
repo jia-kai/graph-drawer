@@ -1,6 +1,6 @@
 /*
  * $File: main.cpp
- * $Date: Sat Feb 05 21:26:19 2011 +0800
+ * $Date: Sun Feb 06 12:21:06 2011 +0800
  */
 /*
 	This file is part of graph-drawer, a gtkmm based function graph drawer
@@ -38,8 +38,8 @@ static const double ZOOM_OUT_FACTOR = 1.5;
 class FuncDrawerUI : public FuncDrawer
 {
 	public:
-		FuncDrawerUI(const Function &func, Gtk::Label *label, Gtk::Window *par_win) :
-			FuncDrawer(func), m_p_label(label), m_p_par_win(par_win)
+		FuncDrawerUI(Function &func, Gtk::Label *label, Gtk::Window *par_win) :
+			FuncDrawer(func), m_p_label(label), m_p_par_win(par_win), m_func(func)
 		{
 			this->add_events(Gdk::KEY_PRESS_MASK);
 			this->set_can_focus();
@@ -52,6 +52,7 @@ class FuncDrawerUI : public FuncDrawer
 	private:
 		Gtk::Label *m_p_label;
 		Gtk::Window *m_p_par_win;
+		Function &m_func;
 
 		void on_size_request(Gtk::Requisition *requisition)
 		{
@@ -79,8 +80,21 @@ class FuncDrawerUI : public FuncDrawer
 				case 'z':
 					this->zoom(ZOOM_OUT_FACTOR);
 					break;
+				case 'Z':
+					read_factor_zoom();
+					break;
+				default:
+					m_func.on_key_press(event->keyval);
 			}
 			return true;
+		}
+
+		void read_factor_zoom()
+		{
+			double f;
+			printf("Please enter a zoom factor (> 1 for zoom out): ");
+			if (scanf("%lf", &f) == 1)
+				this->zoom(f);
 		}
 
 		void save()
@@ -111,9 +125,11 @@ int main(int argc, char **argv)
 		"    s -- save image to file\n"
 		"    a -- abort rendering process\n"
 		"    z -- zoom out by factor %.3lf\n"
+		"    Z -- read a zoom factor from stdin and zoom with it\n"
 		"mouse operation:\n"
-		"    hold the left button to draw a box to zoom in, and\n"
-		"    press right button while drawing to cancel.\n",
+		"    1. hold the left button to draw a box to zoom in, and\n"
+		"       press right button while drawing to cancel.\n"
+		"    2. press right button to make the point under cursor the center.\n",
 		ZOOM_OUT_FACTOR);
 
 	Gtk::Main kit(argc, argv);

@@ -1,6 +1,6 @@
 /*
  * $File: function.h
- * $Date: Sat Feb 05 22:42:06 2011 +0800
+ * $Date: Sun Feb 06 11:59:49 2011 +0800
  *
  * base function class
  */
@@ -34,7 +34,7 @@ class Function
 	public:
 		virtual ~Function() {}
 
-		virtual Rectangle get_initial_domain() const = 0;
+		virtual Rectangle get_initial_domain() = 0;
 
 		class FillImageProgressReporter
 		{
@@ -47,9 +47,11 @@ class Function
 				// as soon as possible if it finds test_abort() returns true
 		};
 		virtual void fill_image(uint8_t *buf, int width, int height,
-				const Rectangle &domain, FillImageProgressReporter &progress_reporter) const = 0;
+				const Rectangle &domain, FillImageProgressReporter &progress_reporter) = 0;
 		// it's guaranteed that the @width/@height ratio is the same as that of @domain when this function get called
 		// progress_reporter.report must be called after finishing each pixel
+
+		virtual void on_key_press(int keyval);
 
 		int get_cpu_num();
 		// get the number of CPUs currently available
